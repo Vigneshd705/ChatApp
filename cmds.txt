@@ -1,0 +1,24 @@
+#Go to the network folder
+cd ~/fabric-samples/test-network
+
+#Bring it down and up
+./network.sh down
+./network.sh up createChannel -c mychannel -ca
+
+#Redeploy the chaincode
+./network.sh deployCC -ccn chat-cc -ccv 1.0 -ccs 1 -ccp ~/Projects/fabric-chat-app/chaincode/ -ccl javascript
+
+#Copy the new connection profile
+cp ~/fabric-samples/test-network/organizations/peerOrganizations/org1.example.com/connection-org1.json ~/Projects/fabric-chat-app/server/connection.json
+
+#Clear the old wallet
+rm -rf ~/Projects/fabric-chat-app/server/wallet/*
+
+#Generate new identities
+cd ~/Projects/fabric-chat-app/server
+node enrollAdmin.js
+node registerUser.js  
+# Or just use the frontend to register new users later
+
+#Start the server
+node app.js

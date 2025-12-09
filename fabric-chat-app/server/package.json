@@ -10,10 +10,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "body-parser": "^2.2.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "fabric-ca-client": "^2.2.20",
-    "fabric-network": "^2.2.20"
+    "fabric-network": "^2.2.20",
+    "jsonwebtoken": "^9.0.3"
   }
 }

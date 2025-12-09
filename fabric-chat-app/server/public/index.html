@@ -1,145 +1,194 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Fabric Messenger</title>
+    <title>Secure Fabric Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; margin: 0; background: #f4f4f9; }
+        /* (KEEPING CSS SAME AS BEFORE, JUST ADDING PASSWORD FIELD STYLE) */
+        :root { --primary: #4F46E5; --bg-chat: #F3F4F6; --text-dark: #111827; }
+        body { font-family: 'Inter', sans-serif; margin: 0; display: flex; height: 100vh; background: var(--bg-chat); overflow: hidden; }
         
-        /* Sidebar */
-        #sidebar { width: 250px; background: #2c3e50; color: white; padding: 20px; display: flex; flex-direction: column; }
-        #sidebar h3 { margin-top: 0; }
-        .user-item, .group-item { padding: 10px; cursor: pointer; border-radius: 5px; margin-bottom: 5px; }
-        .user-item:hover, .group-item:hover { background: #34495e; }
-        .active { background: #1abc9c; }
-
-        /* Main Chat */
-        #main { flex: 1; display: flex; flex-direction: column; padding: 20px; }
-        #chat-header { font-size: 1.5rem; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
-        #chat-history { flex: 1; overflow-y: scroll; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        #input-area { margin-top: 20px; display: flex; }
-        input { flex: 1; padding: 15px; border: 1px solid #ccc; border-radius: 5px 0 0 5px; outline: none; }
-        button { padding: 0 20px; background: #1abc9c; color: white; border: none; border-radius: 0 5px 5px 0; cursor: pointer; font-weight: bold; }
-
-        /* Login Modal */
-        #login-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; }
-        #login-box { background: white; padding: 40px; border-radius: 8px; text-align: center; width: 300px; }
-        #login-box input { width: 90%; margin-bottom: 10px; border-radius: 5px; }
-        #login-box button { width: 100%; border-radius: 5px; padding: 10px; }
+        #sidebar { width: 280px; background: #1F2937; color: white; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 20px; border-bottom: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; }
+        .nav-item { padding: 10px 15px; margin: 5px; cursor: pointer; display: flex; align-items: center; border-radius: 6px; }
+        .nav-item:hover { background: #374151; }
+        .nav-item.active { background: var(--primary); }
+        .avatar { width: 30px; height: 30px; background: #6B7280; border-radius: 50%; margin-right: 12px; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: bold; }
         
-        .msg { margin-bottom: 10px; }
-        .msg-own { text-align: right; }
-        .bubble { display: inline-block; padding: 10px 15px; border-radius: 20px; background: #ecf0f1; max-width: 70%; }
-        .msg-own .bubble { background: #1abc9c; color: white; }
-        .sender-name { font-size: 0.75rem; color: #7f8c8d; margin-bottom: 2px; }
+        #main { flex: 1; display: flex; flex-direction: column; background: white; }
+        #chat-header { padding: 15px; border-bottom: 1px solid #E5E7EB; font-weight: 600; }
+        #chat-history { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 10px; background: #F3F4F6;}
+        
+        .msg { display: flex; flex-direction: column; max-width: 70%; }
+        .msg-own { align-self: flex-end; align-items: flex-end; }
+        .bubble { padding: 10px 15px; border-radius: 10px; font-size: 0.9rem; }
+        .msg-own .bubble { background: var(--primary); color: white; }
+        .msg-other .bubble { background: white; border: 1px solid #ccc; }
+        .sender-name { font-size: 0.7rem; color: #666; margin-bottom: 2px; }
+
+        #input-area { padding: 20px; display: flex; gap: 10px; background: white; }
+        input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; }
+
+        /* AUTH MODAL */
+        #modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 100; }
+        #auth-box { background: white; padding: 40px; border-radius: 12px; width: 350px; text-align: center; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        .auth-input { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #D1D5DB; border-radius: 6px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+        .btn-full { flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+        #statusMsg { margin-top: 15px; font-size: 0.9rem; min-height: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="login-modal">
-        <div id="login-box">
-            <h2>Who are you?</h2>
-            <input type="text" id="usernameInput" placeholder="Enter Username (e.g. Alice)" />
-            <button onclick="login()">Login / Register</button>
-            <p id="loginStatus" style="font-size: 0.8rem; color: #666;"></p>
+    <div id="modal-overlay">
+        <div id="auth-box">
+            <h2>Secure Chat</h2>
+            <input type="text" id="usernameInput" class="auth-input" placeholder="Username" />
+            <input type="password" id="passwordInput" class="auth-input" placeholder="Password" />
+            <div class="btn-group">
+                <button class="btn-full" style="background:#E5E7EB; color:#333;" onclick="handleRegister()">Register</button>
+                <button class="btn-full" style="background:#4F46E5; color:white;" onclick="handleLogin()">Login</button>
+            </div>
+            <div id="statusMsg"></div>
         </div>
     </div>
 
     <div id="sidebar" style="display:none;">
-        <h3>👤 My Account</h3>
-        <p id="currentUserDisplay" style="margin-bottom: 30px; opacity: 0.7;"></p>
-        
-        <h3>💬 Direct Messages</h3>
-        <div id="userList">
-            <div class="user-item" onclick="selectChat('Bob')">Bob</div>
-            <div class="user-item" onclick="selectChat('Charlie')">Charlie</div>
+        <div class="sidebar-header">
+            <span id="currentUserDisplay" style="font-weight:bold;"></span>
+            <button style="padding:5px 10px; font-size:0.8rem;" onclick="logout()">Logout</button>
         </div>
-
-        <h3 style="margin-top: 30px;">📢 Groups</h3>
-        <div id="groupList">
-            <div class="group-item" onclick="selectGroup('General')"># General</div>
-            <div class="group-item" onclick="selectGroup('DevTeam')"># DevTeam</div>
-        </div>
+        <div id="userList" style="flex:1; overflow-y:auto; padding:10px;"></div>
     </div>
 
     <div id="main" style="display:none;">
         <div id="chat-header">Select a chat</div>
         <div id="chat-history"></div>
         <div id="input-area">
-            <input type="text" id="msgContent" placeholder="Type a message..." />
-            <button onclick="sendMessage()">SEND</button>
+            <input type="text" id="msgContent" placeholder="Type a message..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button onclick="sendMessage()">Send</button>
         </div>
     </div>
 
     <script>
         let CURRENT_USER = '';
         let CURRENT_ROOM = '';
-        let IS_GROUP = false;
+        let TOKEN = localStorage.getItem('chat_token'); // 1. Load Token on Startup
 
-        async function login() {
+        // --- ON LOAD: CHECK SESSION ---
+        window.onload = async () => {
+            if (TOKEN) {
+                const res = await fetch('/api/session', {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    enterApp(data.username);
+                } else {
+                    localStorage.removeItem('chat_token'); // Token invalid/expired
+                }
+            }
+        };
+
+        // --- AUTH ---
+        async function handleRegister() {
             const username = document.getElementById('usernameInput').value.trim();
-            if (!username) return;
+            const password = document.getElementById('passwordInput').value.trim();
+            if(!username || !password) return showStatus('Missing fields', 'red');
 
-            const status = document.getElementById('loginStatus');
-            status.innerText = 'Registering with Blockchain...';
-
-            // 1. Register User on Server
+            showStatus('Registering...', 'blue');
             const res = await fetch('/api/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username })
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password })
             });
+            const data = await res.json();
+            if(res.status === 201) showStatus('Success! Please Login.', 'green');
+            else showStatus(data.message, 'red');
+        }
 
-            if (res.ok || res.status === 400) { // 400 means already exists, which is fine
-                CURRENT_USER = username;
-                document.getElementById('login-modal').style.display = 'none';
-                document.getElementById('sidebar').style.display = 'flex';
-                document.getElementById('main').style.display = 'flex';
-                document.getElementById('currentUserDisplay').innerText = username;
+        async function handleLogin() {
+            const username = document.getElementById('usernameInput').value.trim();
+            const password = document.getElementById('passwordInput').value.trim();
+            if(!username || !password) return;
+
+            const res = await fetch('/api/login', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ username, password })
+            });
+            const data = await res.json();
+
+            if(res.ok) {
+                // 2. Save Token
+                localStorage.setItem('chat_token', data.token);
+                TOKEN = data.token;
+                enterApp(data.username);
             } else {
-                status.innerText = 'Error registering user.';
+                showStatus(data.message, 'red');
             }
         }
 
+        function enterApp(username) {
+            CURRENT_USER = username;
+            document.getElementById('modal-overlay').style.display = 'none';
+            document.getElementById('sidebar').style.display = 'flex';
+            document.getElementById('main').style.display = 'flex';
+            document.getElementById('currentUserDisplay').innerText = username;
+            fetchUsers();
+        }
+
+        function logout() {
+            localStorage.removeItem('chat_token'); // 3. Clear Token
+            location.reload();
+        }
+
+        function showStatus(msg, color) {
+            const el = document.getElementById('statusMsg');
+            el.innerText = msg; el.style.color = color;
+        }
+
+        // --- API CALLS (Now use Bearer Token) ---
+        async function authFetch(url, options = {}) {
+            if (!options.headers) options.headers = {};
+            options.headers['Authorization'] = `Bearer ${TOKEN}`;
+            options.headers['Content-Type'] = 'application/json';
+            return fetch(url, options);
+        }
+
+        async function fetchUsers() {
+            const res = await authFetch('/api/users'); // Protected Route
+            const users = await res.json();
+            const list = document.getElementById('userList');
+            list.innerHTML = '';
+            users.forEach(u => {
+                if(u === CURRENT_USER) return;
+                const div = document.createElement('div');
+                div.className = 'nav-item';
+                div.innerHTML = `<div class="avatar">${u[0].toUpperCase()}</div> ${u}`;
+                div.onclick = () => selectChat(u);
+                list.appendChild(div);
+            });
+        }
+
         function selectChat(otherUser) {
-            IS_GROUP = false;
-            // Generate deterministic Room ID: "Alice_Bob"
-            const participants = [CURRENT_USER, otherUser].sort(); 
+            const participants = [CURRENT_USER, otherUser].sort();
             CURRENT_ROOM = participants.join('_');
-            
-            updateHeader(`Chat with ${otherUser}`);
+            document.getElementById('chat-header').innerText = otherUser;
             loadHistory();
-        }
-
-        function selectGroup(groupName) {
-            IS_GROUP = true;
-            CURRENT_ROOM = groupName; // Groups are just simple strings
-            updateHeader(`# ${groupName}`);
-            loadHistory();
-        }
-
-        function updateHeader(title) {
-            document.getElementById('chat-header').innerText = title;
-            // Highlight active (simple logic)
-            document.querySelectorAll('.user-item, .group-item').forEach(el => el.classList.remove('active'));
         }
 
         async function loadHistory() {
-            if (!CURRENT_ROOM) return;
-            const chatBox = document.getElementById('chat-history');
-            chatBox.innerHTML = 'Loading blockchain history...';
-
-            const res = await fetch(`/api/history/${CURRENT_ROOM}`);
+            if(!CURRENT_ROOM) return;
+            const res = await authFetch(`/api/history/${CURRENT_ROOM}`); // Protected
             const data = await res.json();
-            
+            const chatBox = document.getElementById('chat-history');
             chatBox.innerHTML = '';
+            
             data.forEach(msg => {
                 const isMine = msg.userId === CURRENT_USER;
                 const div = document.createElement('div');
-                div.className = `msg ${isMine ? 'msg-own' : ''}`;
-                div.innerHTML = `
-                    <div class="sender-name">${msg.userId}</div>
-                    <div class="bubble">${msg.content}</div>
-                `;
+                div.className = `msg ${isMine ? 'msg-own' : 'msg-other'}`;
+                div.innerHTML = `<div class="sender-name">${isMine?'You':msg.userId}</div><div class="bubble">${msg.content}</div>`;
                 chatBox.appendChild(div);
             });
             chatBox.scrollTop = chatBox.scrollHeight;
@@ -148,28 +197,17 @@
         async function sendMessage() {
             const input = document.getElementById('msgContent');
             const content = input.value;
-            if (!content || !CURRENT_ROOM) return;
-
-            input.value = ''; // Clear early for UX
+            if(!content || !CURRENT_ROOM) return;
+            input.value = '';
             
-            await fetch('/api/message', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    userId: CURRENT_USER, 
-                    roomId: CURRENT_ROOM, 
-                    content: content 
-                })
+            // Note: We don't send userId anymore, the token handles it
+            await authFetch('/api/message', {
+                method: 'POST', body: JSON.stringify({ roomId: CURRENT_ROOM, content })
             });
-
-            loadHistory(); // Reload to see new message
+            loadHistory();
         }
-        
-        // Auto-refresh every 3 seconds to see new messages
-        setInterval(() => {
-            if(CURRENT_ROOM) loadHistory();
-        }, 3000);
 
+        setInterval(() => { if(CURRENT_ROOM) loadHistory(); }, 3000);
     </script>
 </body>
 </html>
